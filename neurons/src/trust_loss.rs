@@ -36,8 +36,8 @@ impl Neuron for TrustLossNeuron {
     fn calculate_result(&self, users: &[String]) -> HashMap<String, f64> {
         let mut trust_diff_map: HashMap<String, f64> = users.iter().map(|user| (user.to_string(), 0.0)).collect();
         for user in users {
-            // if this user doesn't have trust list for this round, skip this iteration completely
-            // it implicates they couldn't have actively removed trust from someone.
+            // If this user doesn't have a trust list for this round, skip this iteration completely.
+            // This implies that they couldn't have actively removed trust from someone.
             let current_trust_list = match self.trusted_for_user_per_round.get(&self.round) {
                 Some(trusted_for_user_current_round) => match trusted_for_user_current_round.get(user) {
                     Some(current_trust_list) => current_trust_list.clone(),
@@ -45,16 +45,16 @@ impl Neuron for TrustLossNeuron {
                 },
                 None => continue,
             };
-            // if this user doesn't have trust list from any previous round its a fresh account, in which case skip
-            // but if this user has a trust list in any previous round, use it as a reference, return only if none found
+            // If this user doesn't have a trust list from any previous round, it's a fresh account, so skip it.
+            // If a previous trust list exists, use the most recent one as the reference; skip only if none is found.
             let previous_trust_list = match self.find_most_recent_previous_trust_list(user) {
                 Some(previous_trust_list) => previous_trust_list,
                 None => continue,
             };
-            // iterate over who this user trusted in previous round
+            // Iterate over the users trusted in the previous round.
             previous_trust_list.iter().for_each(|trusted_user| {
                 if !current_trust_list.contains(trusted_user) {
-                    // only users present in the input slice are tracked in the output map
+                    // Only users present in the input slice are tracked in the output map.
                     if let Some(value) = trust_diff_map.get_mut(trusted_user) {
                         *value -= 1.0;
                     }
