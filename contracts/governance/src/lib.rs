@@ -212,15 +212,10 @@ impl VotingSystem {
     }
 
     pub fn get_voting_power_for_user(env: Env, user: Address) -> Result<I256, VotingSystemError> {
-        match read_voting_powers(&env, Self::get_current_round(&env)) {
-            Ok(voting_powers) => {
-                if let Some(voting_power) = voting_powers.get(user) {
-                    return Ok(voting_power);
-                }
-                Err(VotingSystemError::NGQResultForVoterMissing)
-            }
-            Err(_) => Err(VotingSystemError::UnknownError),
-        }
+        let voting_powers = Self::get_voting_powers(env.clone())?;
+        voting_powers
+            .get(user)
+            .ok_or(VotingSystemError::NGQResultForVoterMissing)
     }
 }
 
@@ -317,7 +312,6 @@ impl Governance for VotingSystem {
         result: Map<Address, I256>,
     ) {
         require_admin(&env);
-
         write_neuron_result(
             &env,
             &layer_id,
