@@ -44,6 +44,10 @@ impl TrustGraphNeuron {
     }
 
     fn handle_highly_trusted_bonus(&self, trust_map: HashMap<String, f64>, percent_threshold: usize, percent_bonus: f64) -> HashMap<String, f64> {
+        if trust_map.is_empty() {
+            return trust_map;
+        }
+
         // ADDITIONAL BONUS if you're trusted by highly trusted user
         let mut result_with_bonus: HashMap<String, f64> = trust_map.clone();
 
@@ -126,8 +130,16 @@ fn calculate_page_rank(nodes: &Vec<String>, edges: &Vec<(String, Vec<String>)>, 
 const NORMALIZATION_SCALE: f64 = 3.0;
 
 fn min_max_normalize_result(result: HashMap<String, f64>) -> HashMap<String, f64> {
+    if result.is_empty() {
+        return result;
+    }
+
     let min = result.values().copied().reduce(f64::min).unwrap();
     let max = result.values().copied().reduce(f64::max).unwrap();
+
+    if max == min {
+        return result.into_keys().map(|key| (key, 0.0)).collect();
+    }
 
     result
         .into_iter()
@@ -139,6 +151,10 @@ fn min_max_normalize_result(result: HashMap<String, f64>) -> HashMap<String, f64
 }
 
 fn calculate_high_trust_value(trust_map: &HashMap<String, f64>, percent_threshold: usize) -> f64 {
+    if trust_map.is_empty() {
+        return 0.0;
+    }
+
     let mut trust_scores_sorted: Vec<f64> = trust_map.values().cloned().collect();
     trust_scores_sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
@@ -250,6 +266,26 @@ mod tests {
         let ranks = neuron.handle_page_rank(&users_vec(&["hub", "u1", "u2", "u3"]));
         assert_f64_near!(ranks.get("hub").unwrap(), &3.0);
         assert_f64_near!(ranks.get("u1").unwrap(), &0.0);
+    }
+
+    #[test]
+    fn min_max_normalization_handles_equal_scores() {
+        let result = HashMap::from([("alice".to_string(), 1.0), ("bob".to_string(), 1.0)]);
+        let normalized = min_max_normalize_result(result);
+
+        assert_eq!(normalized.get("alice"), Some(&0.0));
+        assert_eq!(normalized.get("bob"), Some(&0.0));
+    }
+
+    #[test]
+    fn min_max_normalization_handles_empty_input() {
+        assert!(min_max_normalize_result(HashMap::new()).is_empty());
+    }
+
+    #[test]
+    fn empty_users_returns_empty_result() {
+        let neuron = TrustGraphNeuron { trusted_for_user: HashMap::new() };
+        assert!(neuron.calculate_result(&[]).is_empty());
     }
 
     #[test]
