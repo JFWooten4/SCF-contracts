@@ -4,9 +4,9 @@ use web_sys::console;
 use crate::neurons::Neuron;
 use std::collections::{HashMap, HashSet};
 
-// users with top X % highest trust score (equal or above) will be considered highly trusted
+// Users with the top X% highest trust scores (equal or above) are considered highly trusted.
 const HIGHLY_TRUSTED_PERCENT_THRESHOLD: usize = 10;
-// users trusted by highly trusted users will get a bonus of X % of their own score
+// Users trusted by highly trusted users receive a bonus of X% of their own score.
 const HIGHLY_TRUSTED_PERCENT_BONUS: f64 = 15.0;
 
 #[derive(Clone, Debug)]
@@ -48,20 +48,20 @@ impl TrustGraphNeuron {
             return trust_map;
         }
 
-        // ADDITIONAL BONUS if you're trusted by highly trusted user
+        // Add an additional bonus when a user is trusted by a highly trusted user.
         let mut result_with_bonus: HashMap<String, f64> = trust_map.clone();
 
-        // calculate who has top X % highest trust
+        // Calculate the threshold for the top X% highest trust scores.
         let high_trust_value = calculate_high_trust_value(&trust_map, percent_threshold);
 
-        // if you're trusted by someone whos trust score is higher than this, you get additional X % of your own score
+        // If a user is trusted by someone whose trust score meets the threshold, add X% of the user's own score.
         for (user, score) in &trust_map {
-            // is user considered highly trusted
+            // Check whether the user is considered highly trusted.
             if score >= &high_trust_value {
-                // get all users he trusts
-                // (someone can be trusted by a lot of users, but not trust anyone himself, in such case just skip)
+                // Get all users they trust.
+                // Someone can be trusted by many users without trusting anyone themselves; in that case, skip them.
                 if let Some(trusted_for_this_user) = self.trusted_for_user.get(user) {
-                    // give everyone a bonus
+                    // Give each trusted user a bonus.
                     for u in trusted_for_this_user {
                         match result_with_bonus.get_mut(u) {
                             Some(res) => {
@@ -76,7 +76,7 @@ impl TrustGraphNeuron {
             }
         }
 
-        // print only those results that have diff - for debug
+        // Print only results that differ, for debugging.
         // let mut with_bonus_count = 0;
         // for (user, score) in &trust_map {
         //     let with_bonus = result_with_bonus.get(user).unwrap();
@@ -126,7 +126,7 @@ fn calculate_page_rank(nodes: &Vec<String>, edges: &Vec<(String, Vec<String>)>, 
     page_ranks
 }
 
-// Scale factor for min-max normalization output (0 to SCALE)
+// Scale factor for min-max normalization output (0 to SCALE).
 const NORMALIZATION_SCALE: f64 = 3.0;
 
 fn min_max_normalize_result(result: HashMap<String, f64>) -> HashMap<String, f64> {
@@ -204,7 +204,7 @@ mod tests {
 
         let with_bonus = trust_graph_neuron.handle_highly_trusted_bonus(result, 1, 100.0);
 
-        // PageRank normalized to 0-3, then 100% bonus applied
+        // PageRank is normalized to 0-3, then a 100% bonus is applied.
         assert_f64_near!(with_bonus.get("B").unwrap(), &4.226);
         assert_f64_near!(with_bonus.get("C").unwrap(), &2.794);
     }
@@ -222,7 +222,7 @@ mod tests {
 
         let result = trust_graph_neuron.handle_page_rank(&["A", "B", "C", "D", "E"].into_iter().map(std::string::ToString::to_string).collect::<Vec<_>>());
 
-        // PageRank normalized to 0-3 range
+        // PageRank is normalized to the 0-3 range.
         assert_f64_near!(result.get("A").unwrap(), &3.0);
         assert_f64_near!(result.get("B").unwrap(), &2.112);
         assert_f64_near!(result.get("C").unwrap(), &1.397);
@@ -236,9 +236,9 @@ mod tests {
 
     #[test]
     fn more_trusters_means_higher_pagerank() {
-        // Single population so the node set (and the normalization base) is fixed: three targets
-        // trusted by 1, 5 and 10 distinct users respectively. PageRank is relative, so this is the
-        // honest framing of "trusted by more users -> higher score".
+        // Use a single population so the node set (and normalization base) is fixed: three targets
+        // are trusted by 1, 5, and 10 distinct users, respectively. PageRank is relative, so this is the
+        // accurate framing of "trusted by more users -> higher score."
         let mut trusted_for_user: HashMap<String, Vec<String>> = HashMap::new();
         for (target, count) in [("target1", 1), ("target5", 5), ("target10", 10)] {
             for i in 0..count {
@@ -256,8 +256,8 @@ mod tests {
 
     #[test]
     fn min_max_normalization_bounds() {
-        // A clear hub: u1,u2,u3 all trust `hub`. After normalization the unique max is 3.0
-        // and the (equal) trusters are the min at 0.0.
+        // A clear hub: u1, u2, and u3 all trust `hub`. After normalization, the unique maximum is 3.0,
+        // and the equal trusters are at the minimum of 0.0.
         let mut trusted_for_user: HashMap<String, Vec<String>> = HashMap::new();
         trusted_for_user.insert("u1".to_string(), vec!["hub".to_string()]);
         trusted_for_user.insert("u2".to_string(), vec!["hub".to_string()]);
@@ -290,13 +290,13 @@ mod tests {
 
     #[test]
     fn highly_trusted_bonus_threshold_boundary() {
-        // 10 users, distinct scores 1..=10. At a 10% threshold only the single top-scoring user
-        // counts as highly trusted: index = len - max(1, len*10/100) = 10 - 1 = 9 (the top score).
+        // There are 10 users with distinct scores from 1 through 10. At a 10% threshold, only the single
+        // top-scoring user counts as highly trusted: index = len - max(1, len*10/100) = 10 - 1 = 9.
         let mut trust_map: HashMap<String, f64> = HashMap::new();
         for i in 1..=10 {
             trust_map.insert(format!("u{i}"), f64::from(i));
         }
-        // top user u10 trusts u1,u2; u9 (NOT highly trusted at 10%) trusts u3.
+        // The top user, u10, trusts u1 and u2; u9 (not highly trusted at 10%) trusts u3.
         let mut trusted_for_user: HashMap<String, Vec<String>> = HashMap::new();
         trusted_for_user.insert("u10".to_string(), vec!["u1".to_string(), "u2".to_string()]);
         trusted_for_user.insert("u9".to_string(), vec!["u3".to_string()]);
@@ -304,12 +304,12 @@ mod tests {
 
         let with_bonus = neuron.handle_highly_trusted_bonus(trust_map, 10, 15.0);
 
-        // u1,u2 trusted by highly-trusted u10 -> +15% of their own score
+        // u1 and u2 are trusted by highly trusted u10, so each receives 15% of its own score.
         assert_f64_near!(with_bonus.get("u1").unwrap(), &(1.0 * 1.15));
         assert_f64_near!(with_bonus.get("u2").unwrap(), &(2.0 * 1.15));
-        // u3 trusted only by u9 (below threshold) -> unchanged
+        // u3 is trusted only by u9, which is below the threshold, so its score is unchanged.
         assert_f64_near!(with_bonus.get("u3").unwrap(), &3.0);
-        // u10 itself untouched
+        // u10 itself is unchanged.
         assert_f64_near!(with_bonus.get("u10").unwrap(), &10.0);
     }
 
