@@ -27,7 +27,7 @@ impl Neuron for Neuron1 {
         let mut result = HashMap::new();
 
         for user in users {
-            let bonus: f64 = Neuron1::bonus(*self.data.get(user).unwrap());
+            let bonus: f64 = Neuron1::bonus(*self.data.get(user).unwrap_or(&0.0));
             result.insert(user.into(), bonus);
         }
 
