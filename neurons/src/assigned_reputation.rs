@@ -72,8 +72,8 @@ impl Neuron for AssignedReputationNeuron {
         let mut result = HashMap::new();
 
         for user in users {
-            let mut bonus = reputation_bonus(self.users_reputation.get(user).unwrap());
-            bonus += discord_roles_bonus(self.users_discord_roles.get(user).unwrap());
+            let mut bonus = self.users_reputation.get(user).map_or(0.0, reputation_bonus);
+            bonus += self.users_discord_roles.get(user).map_or(0.0, discord_roles_bonus);
             result.insert(user.into(), bonus);
         }
 
@@ -133,6 +133,22 @@ mod tests {
         assert_eq!(resut.get("user1").unwrap(), &5.0);
         assert_eq!(resut.get("user2").unwrap(), &3.0);
         assert_eq!(resut.get("user3").unwrap(), &1.0);
+    }
+
+    #[test]
+    fn missing_user_metadata_uses_available_data_without_panicking() {
+        let mut reputation = HashMap::new();
+        reputation.insert("alice".to_string(), ReputationTier::Navigator);
+
+        let mut roles = HashMap::new();
+        roles.insert("bob".to_string(), vec!["SDF".to_string()]);
+
+        let neuron = AssignedReputationNeuron::from_data(reputation, roles);
+        let result = neuron.calculate_result(&["alice".to_string(), "bob".to_string(), "carol".to_string()]);
+
+        assert_eq!(result.get("alice"), Some(&2.0));
+        assert_eq!(result.get("bob"), Some(&1.0));
+        assert_eq!(result.get("carol"), Some(&0.0));
     }
 
     #[test]
