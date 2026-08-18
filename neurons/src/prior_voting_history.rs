@@ -36,14 +36,10 @@ impl PriorVotingHistoryNeuron {
     }
 
     /// Computes the prior-voting-history bonus for a single user.
-    ///
-    /// # Panics
-    ///
-    /// Panics with `"history bonus offset is bigger than current round"` if `current_round` is
-    /// smaller than `ROUND_IMPORTANCE_DECAY_OFFSET` (for example after a round reset to 0), which
-    /// would otherwise underflow the round-importance offset subtraction.
     pub fn calculate_bonus(&self, user: String) -> f64 {
-        assert!(self.current_round >= ROUND_IMPORTANCE_DECAY_OFFSET, "history bonus offset is bigger than current round");
+        let Some(round_offset) = self.current_round.checked_sub(ROUND_IMPORTANCE_DECAY_OFFSET) else {
+            return 0.0;
+        };
         // console::log_1(&JsValue::from_str(&format!("USER: {user} ")));
 
         // 1. loop over all rounds up to current (a submitter couldn't vote in their own round,
@@ -52,7 +48,7 @@ impl PriorVotingHistoryNeuron {
         // 3. otherwise only rounds the user participated in contribute: full weight before
         //    round 32 (no vote data), active-votes ratio from 32 onwards
         let rounds_participated = self.users_round_history.get(&user).cloned().unwrap_or_else(Vec::new);
-        let x_offset: f64 = (self.current_round - ROUND_IMPORTANCE_DECAY_OFFSET) as f64;
+        let x_offset = f64::from(round_offset);
         let mut rounds_weights_sum = 0.0;
         for round in OLDEST_ROUND..=self.current_round {
             let round_weight: f64 = generalised_logistic_function(0.0, 1.0, 1.0, 1.0, 1.0, 4.0, x_offset, round as f64);
@@ -356,13 +352,9 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "history bonus offset is bigger than current round")]
-    fn current_round_below_offset_panics() {
-        // A current_round below ROUND_IMPORTANCE_DECAY_OFFSET (e.g. after a round reset to 0) would
-        // underflow the u32 offset subtraction and silently wrap in the release wasm build, so
-        // calculate_bonus guards it with an explicit assert. Holds in both debug and release.
+    fn current_round_below_offset_returns_zero() {
         let neuron = PriorVotingHistoryNeuron::from_data(history(&[("alice", &[3])]), HashMap::new(), HashMap::new(), 5);
-        let _ = neuron.calculate_bonus("alice".to_string());
+        assert_close(neuron.calculate_bonus("alice".to_string()), 0.0);
     }
 
     #[test]
