@@ -65,12 +65,7 @@ fn calculate_quorum_consensus(user: &str, delegatees: &[String], submission_vote
         })
         .collect();
 
-    // this will never trigger under normal conditions, only if voting data would be incorrect with delegates votes other than yes/no
-    if valid_delegates.len() < SMALLEST_DEFINED_QUORUM_SIZE {
-        bail!("User {} has valid delegates length smaller than required {}", user, SMALLEST_DEFINED_QUORUM_SIZE)
-    }
-
-    // start with the full qourum user has defined
+    // Start with the full quorum of delegatees who cast a Yes or No vote.
     let selected_delegatees = valid_delegates;
     let mut resolved_vote = Vote::Abstain;
 
@@ -99,7 +94,7 @@ fn calculate_quorum_consensus(user: &str, delegatees: &[String], submission_vote
         // With this calculation method Abstain will never occur. (assuming all delegates have voted)
         // But if we were to use some different method where Abstain could occur,
         // here we would pop one delegatee of selected_delegatees list, and
-        // repeat untill we get Yes/No or run out of delegatees (min 5)
+        // repeat until we get Yes/No or run out of delegatees (min 5)
 
         // let _ = selected_delegatees.pop();
     }
@@ -179,7 +174,7 @@ mod tests {
     }
 
     #[test]
-    fn fail_if_less_than_x_delegates_voted() {
+    fn abstain_if_less_than_minimum_delegatees_voted() {
         let mut submission_votes = HashMap::new();
 
         let user0 = String::from("user0");
@@ -196,13 +191,11 @@ mod tests {
         submission_votes.insert(user2.clone(), Vote::Yes);
         submission_votes.insert(user3.clone(), Vote::Yes);
         submission_votes.insert(user4.clone(), Vote::Yes);
-        submission_votes.insert(user5.clone(), Vote::Yes);
-        submission_votes.insert(user6.clone(), Vote::Yes);
 
         let delegates_for_user = vec![user1.clone(), user2.clone(), user3.clone(), user4.clone(), user5.clone(), user6.clone(), user7.clone()];
-        let resolved_vote = calculate_quorum_consensus("user0", &delegates_for_user, &submission_votes);
+        let resolved_vote = calculate_quorum_consensus("user0", &delegates_for_user, &submission_votes).unwrap();
 
-        assert_eq!(resolved_vote.unwrap_err().to_string(), "User user0 has valid delegates length smaller than required 7");
+        assert_eq!(resolved_vote, Vote::Abstain);
     }
 
     #[test]
