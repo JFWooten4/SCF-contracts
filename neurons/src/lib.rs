@@ -81,7 +81,9 @@ pub fn run_neurons(
     let assigned_reputation_neuron = AssignedReputationNeuron::from_data(users_reputation, users_discord_roles);
 
     // Trust Graph
-    let trusted_for_user_current_round = trusted_for_user_per_round.get(&current_round).unwrap();
+    let trusted_for_user_current_round = trusted_for_user_per_round
+        .get(&current_round)
+        .ok_or_else(|| format!("trusted_for_user_per_round missing data for current round {current_round}"))?;
     let trust_graph_neuron = TrustGraphNeuron::from_data(trusted_for_user_current_round.clone());
 
     // Trust Loss
@@ -185,5 +187,25 @@ mod tests {
         let rep = &parsed["assigned_reputation_neuron"];
         assert_eq!(rep["alice"], to_fixed_point_decimal(3.0).to_string());
         assert_eq!(rep["bob"], to_fixed_point_decimal(0.0).to_string());
+    }
+
+    #[test]
+    fn run_neurons_returns_error_when_current_round_trust_data_is_missing() {
+        let err = run_neurons(
+            30,
+            r#"["alice"]"#,
+            "{}",
+            r#"{"alice":0}"#,
+            r#"{"alice":[]}"#,
+            "{}",
+            "{}",
+            "{}",
+            "{}",
+            "{}",
+            "{}",
+        )
+        .expect_err("missing current-round trust data should return an error");
+
+        assert_eq!(err, "trusted_for_user_per_round missing data for current round 30");
     }
 }
