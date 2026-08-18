@@ -14,18 +14,17 @@ impl TrustLossNeuron {
         Self { round, trusted_for_user_per_round }
     }
     fn find_most_recent_previous_trust_list(&self, target_user: &String) -> Option<Vec<String>> {
-        let mut counter: u32 = self.round - 1;
-        let mut most_recent_previous_trust_list: Option<Vec<String>> = None;
+        let most_recent_round = self.round.checked_sub(1)?;
+        let oldest_round = self.round.saturating_sub(HOW_DEEP);
 
-        while most_recent_previous_trust_list.is_none() && counter >= HOW_DEEP {
+        for counter in (oldest_round..=most_recent_round).rev() {
             if let Some(trusted_for_user) = self.trusted_for_user_per_round.get(&counter) {
                 if let Some(trust_list) = trusted_for_user.get(target_user) {
-                    most_recent_previous_trust_list = Some(trust_list.clone());
+                    return Some(trust_list.clone());
                 }
             }
-            counter -= 1;
         }
-        most_recent_previous_trust_list
+        None
     }
 }
 
@@ -37,7 +36,7 @@ impl Neuron for TrustLossNeuron {
     fn calculate_result(&self, users: &[String]) -> HashMap<String, f64> {
         let mut trust_diff_map: HashMap<String, f64> = users.iter().map(|user| (user.to_string(), 0.0)).collect();
         for user in users {
-            // if this user doesn't have trust list for this round, skip this iteration completly
+            // if this user doesn't have trust list for this round, skip this iteration completely
             // it implicates they couldn't have actively removed trust from someone.
             let current_trust_list = match self.trusted_for_user_per_round.get(&self.round) {
                 Some(trusted_for_user_current_round) => match trusted_for_user_current_round.get(user) {
@@ -168,6 +167,30 @@ mod tests {
     fn name_returns_correct_value() {
         let neuron = TrustLossNeuron::from_data(44, HashMap::new());
         assert_eq!(neuron.name(), "trust_loss_neuron");
+    }
+
+    #[test]
+    fn round_zero_does_not_underflow() {
+        let neuron = TrustLossNeuron::from_data(0, HashMap::new());
+        assert_eq!(neuron.find_most_recent_previous_trust_list(&"alice".to_string()), None);
+    }
+
+    #[test]
+    fn searches_full_lookback_window() {
+        let mut trusted_for_user_per_round: HashMap<u32, HashMap<String, Vec<String>>> = HashMap::new();
+        trusted_for_user_per_round.insert(12, HashMap::from([("alice".to_string(), trust_list(&["bob"]))]));
+
+        let neuron = TrustLossNeuron::from_data(44, trusted_for_user_per_round);
+        assert_eq!(neuron.find_most_recent_previous_trust_list(&"alice".to_string()), Some(trust_list(&["bob"])));
+    }
+
+    #[test]
+    fn does_not_search_beyond_lookback_window() {
+        let mut trusted_for_user_per_round: HashMap<u32, HashMap<String, Vec<String>>> = HashMap::new();
+        trusted_for_user_per_round.insert(11, HashMap::from([("alice".to_string(), trust_list(&["bob"]))]));
+
+        let neuron = TrustLossNeuron::from_data(44, trusted_for_user_per_round);
+        assert_eq!(neuron.find_most_recent_previous_trust_list(&"alice".to_string()), None);
     }
 
     #[test]
