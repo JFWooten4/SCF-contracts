@@ -60,7 +60,7 @@ fn calculate_quorum_consensus(user: &str, delegatees: &[String], submission_vote
     let valid_delegates: Vec<&String> = delegatees
         .iter()
         .filter(|delegatee| {
-            let delegatee_vote = submission_votes.get(*delegatee).unwrap_or(&Vote::Abstain);
+            let delegatee_vote = submission_votes.get(*delegatee).unwrap_or(&Vote::A);
             matches!(delegatee_vote, Vote::Y | Vote::N)
         })
         .collect();
@@ -72,20 +72,20 @@ fn calculate_quorum_consensus(user: &str, delegatees: &[String], submission_vote
 
     // start with the full qourum user has defined
     let selected_delegatees = valid_delegates;
-    let mut resolved_vote = Vote::Abstain;
+    let mut resolved_vote = Vote::A;
 
-    while resolved_vote == Vote::Abstain {
+    while resolved_vote == Vote::A {
         if selected_delegatees.len() < MIN_QUORUM_SIZE {
             break;
         }
         let mut votes_yes = 0;
         let mut votes_no = 0;
         for &delegatee in &selected_delegatees {
-            let delegatee_vote = submission_votes.get(delegatee).unwrap_or(&Vote::Abstain);
+            let delegatee_vote = submission_votes.get(delegatee).unwrap_or(&Vote::A);
             match delegatee_vote {
                 Vote::Y => votes_yes += 1,
                 Vote::N => votes_no += 1,
-                Vote::Abstain | Vote::Delegate => {
+                Vote::A | Vote::Delegate => {
                     bail!("Invalid delegatee operation");
                 }
             };
@@ -96,8 +96,8 @@ fn calculate_quorum_consensus(user: &str, delegatees: &[String], submission_vote
             resolved_vote = Vote::N
         }
 
-        // With this calculation method Abstain will never occur. (assuming all delegates have voted)
-        // But if we were to use some different method where Abstain could occur,
+        // With this calculation method A will never occur. (assuming all delegates have voted)
+        // But if we were to use some different method where A could occur,
         // here we would pop one delegatee of selected_delegatees list, and
         // repeat until we get Y/N or run out of delegatees (min 5)
 

@@ -30,7 +30,7 @@ pub enum Vote {
     Y,
     N,
     Delegate,
-    Abstain,
+    A,
 }
 
 pub(crate) fn generalised_logistic_function(a: f64, k: f64, c: f64, q: f64, b: f64, nu: f64, x_off: f64, x: f64) -> f64 {

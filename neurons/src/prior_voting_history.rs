@@ -99,7 +99,7 @@ fn calculate_active_votes_ratio(user: &str, votes: &HashMap<String, HashMap<Stri
         match votes.get(user) {
             Some(vote) => match vote {
                 Vote::Y | Vote::N => active_votes_count += 1.0,
-                Vote::Abstain | Vote::Delegate => {}
+                Vote::A | Vote::Delegate => {}
             },
             None => {
                 //     console::log_1(&JsValue::from_str(&format!(

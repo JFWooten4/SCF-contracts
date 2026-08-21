@@ -30,7 +30,7 @@ impl Submission {
 pub enum Vote {
     Y,
     N,
-    Abstain,
+    A,
 }
 
 #[contracterror]

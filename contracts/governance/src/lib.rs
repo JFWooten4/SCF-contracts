@@ -176,7 +176,7 @@ impl VotingSystem {
 
         for (voter_id, vote) in submission_votes {
             let voting_power = match vote {
-                Vote::Abstain => I256::from_i32(env, ABSTAIN_VOTING_POWER),
+                Vote::A => I256::from_i32(env, ABSTAIN_VOTING_POWER),
                 _ => voting_powers
                     .get(voter_id)
                     .ok_or(VotingSystemError::NGQResultForVoterMissing)?,
@@ -189,7 +189,7 @@ impl VotingSystem {
                     submission_voting_power_minus =
                         submission_voting_power_minus.add(&voting_power);
                 }
-                Vote::Abstain => (),
+                Vote::A => (),
             };
         }
         let tally_result: I256 = submission_voting_power_plus.sub(&submission_voting_power_minus);

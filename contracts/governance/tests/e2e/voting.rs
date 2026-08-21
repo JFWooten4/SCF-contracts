@@ -48,7 +48,7 @@ fn voting_data_upload() {
     let mut votes_submission2 = Map::new(&env);
     votes_submission2.set(user1.clone(), Vote::Y);
     votes_submission2.set(user2.clone(), Vote::N);
-    votes_submission2.set(user3.clone(), Vote::Abstain);
+    votes_submission2.set(user3.clone(), Vote::A);
 
     contract_client.set_votes_for_submission(&submission1, &votes_submission1);
     contract_client.set_votes_for_submission(&submission2, &votes_submission2);

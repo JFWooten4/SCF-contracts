@@ -7,8 +7,8 @@ const DELEGATED_VOTE_DENOMINATOR: i32 = 2;
 const FIXED_POINT_SCALING_FACTOR: i32 = 100; // *10 to mitigate float precission loss, and *10 to allow integer division
 #[derive(Clone, Debug)]
 pub struct RetroVoteQualityNeuron {
-    votes_per_round: HashMap<u32, HashMap<String, HashMap<String, Vote>>>, // round -> submission -> user -> vote (Y/N/Abstain/Delegate)
-    normalized_votes_per_round: HashMap<u32, HashMap<String, HashMap<String, Vote>>>, // round -> submission -> user -> vote (Y/N/Abstain)
+    votes_per_round: HashMap<u32, HashMap<String, HashMap<String, Vote>>>, // round -> submission -> user -> vote (Y/N/A/Delegate)
+    normalized_votes_per_round: HashMap<u32, HashMap<String, HashMap<String, Vote>>>, // round -> submission -> user -> vote (Y/N/A)
     tranche_status_map: HashMap<String, Vec<String>>,                      // tranche status -> [submission id (airtable)]
     submissions_airtable_ids: HashMap<String, String>,
 }
@@ -36,7 +36,7 @@ impl RetroVoteQualityNeuron {
                 // loop through all votes
                 for (voter, vote) in submission_votes {
                     // skip votes from other users, and no/abstain
-                    if voter != user || vote == &Vote::N || vote == &Vote::Abstain {
+                    if voter != user || vote == &Vote::N || vote == &Vote::A {
                         continue;
                     };
                     // lookup bonus for this submission
@@ -57,7 +57,7 @@ impl RetroVoteQualityNeuron {
                                 }
                             }
                         }
-                        Vote::Abstain | Vote::N => {}
+                        Vote::A | Vote::N => {}
                     }
                 }
             }
@@ -191,7 +191,7 @@ mod tests {
 
     #[test]
     fn no_and_abstain_votes_contribute_nothing() {
-        let neuron = build_neuron(votes(30, "sub1", &[("alice", Vote::N), ("bob", Vote::Abstain)]), HashMap::new(), &[("sub1", "rec1", LIVE_WITHIN_6)]);
+        let neuron = build_neuron(votes(30, "sub1", &[("alice", Vote::N), ("bob", Vote::A)]), HashMap::new(), &[("sub1", "rec1", LIVE_WITHIN_6)]);
         let baseline = 0.0;
         assert_close(neuron.run_user("alice"), baseline);
         assert_close(neuron.run_user("bob"), baseline);
@@ -214,7 +214,7 @@ mod tests {
     #[test]
     fn delegate_resolving_to_no_or_abstain_contributes_nothing() {
         let neuron_no = build_neuron(votes(30, "sub1", &[("alice", Vote::Delegate)]), votes(30, "sub1", &[("alice", Vote::N)]), &[("sub1", "rec1", LIVE_WITHIN_6)]);
-        let neuron_abstain = build_neuron(votes(30, "sub1", &[("alice", Vote::Delegate)]), votes(30, "sub1", &[("alice", Vote::Abstain)]), &[("sub1", "rec1", LIVE_WITHIN_6)]);
+        let neuron_abstain = build_neuron(votes(30, "sub1", &[("alice", Vote::Delegate)]), votes(30, "sub1", &[("alice", Vote::A)]), &[("sub1", "rec1", LIVE_WITHIN_6)]);
         let baseline = 0.0;
         assert_close(neuron_no.run_user("alice"), baseline);
         assert_close(neuron_abstain.run_user("alice"), baseline);
