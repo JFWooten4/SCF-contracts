@@ -98,7 +98,7 @@ fn calculate_active_votes_ratio(user: &str, votes: &HashMap<String, HashMap<Stri
         // get users vote for this submission
         match votes.get(user) {
             Some(vote) => match vote {
-                Vote::Yes | Vote::No => active_votes_count += 1.0,
+                Vote::Y | Vote::N => active_votes_count += 1.0,
                 Vote::Abstain | Vote::Delegate => {}
             },
             None => {
@@ -118,9 +118,9 @@ mod tests {
 
     #[test]
     fn active_votes_ratio() {
-        let submission1_votes: HashMap<String, Vote> = HashMap::from([("user1".to_string(), Vote::Yes)]);
-        let submission2_votes: HashMap<String, Vote> = HashMap::from([("user1".to_string(), Vote::Yes)]);
-        let submission3_votes: HashMap<String, Vote> = HashMap::from([("user1".to_string(), Vote::No)]);
+        let submission1_votes: HashMap<String, Vote> = HashMap::from([("user1".to_string(), Vote::Y)]);
+        let submission2_votes: HashMap<String, Vote> = HashMap::from([("user1".to_string(), Vote::Y)]);
+        let submission3_votes: HashMap<String, Vote> = HashMap::from([("user1".to_string(), Vote::N)]);
         let submission4_votes: HashMap<String, Vote> = HashMap::from([("user1".to_string(), Vote::Delegate)]);
         let submission5_votes: HashMap<String, Vote> = HashMap::from([("user1".to_string(), Vote::Delegate)]);
         let votes: HashMap<String, HashMap<String, Vote>> = HashMap::from([
@@ -135,7 +135,7 @@ mod tests {
     }
     #[test]
     fn active_votes_ratio_no_less_than_cap() {
-        let submission1_votes: HashMap<String, Vote> = HashMap::from([("user1".to_string(), Vote::Yes)]);
+        let submission1_votes: HashMap<String, Vote> = HashMap::from([("user1".to_string(), Vote::Y)]);
         let submission2_votes: HashMap<String, Vote> = HashMap::from([("user1".to_string(), Vote::Delegate)]);
         let submission3_votes: HashMap<String, Vote> = HashMap::from([("user1".to_string(), Vote::Delegate)]);
         let submission4_votes: HashMap<String, Vote> = HashMap::from([("user1".to_string(), Vote::Delegate)]);
@@ -236,8 +236,8 @@ mod tests {
 
     #[test]
     fn post_32_round_scales_by_active_ratio() {
-        // round 35 >= 32 with a votes entry: 3 active (Yes/No) of 4 submissions -> ratio 0.75.
-        let votes = votes_for_round(35, "alice", &[Vote::Yes, Vote::Yes, Vote::No, Vote::Delegate]);
+        // round 35 >= 32 with a votes entry: 3 active (Y/N) of 4 submissions -> ratio 0.75.
+        let votes = votes_for_round(35, "alice", &[Vote::Y, Vote::Y, Vote::N, Vote::Delegate]);
         let neuron = PriorVotingHistoryNeuron::from_data(history(&[("alice", &[35])]), votes, HashMap::new(), 38);
         let expected = final_squash(round_weight(38.0, 35.0) * 0.75);
         assert_close(neuron.calculate_bonus("alice".to_string()), expected);
@@ -274,7 +274,7 @@ mod tests {
     #[test]
     fn mixed_history_voted_in_earlier_round_submitter_in_later_round() {
         // voted normally in 33, had a project in 35 (couldn't vote there).
-        let votes = votes_for_round(33, "alice", &[Vote::Yes, Vote::Yes, Vote::No, Vote::Delegate]);
+        let votes = votes_for_round(33, "alice", &[Vote::Y, Vote::Y, Vote::N, Vote::Delegate]);
         let submitters = HashMap::from([(35, HashSet::from(["alice".to_string()]))]);
         let neuron = PriorVotingHistoryNeuron::from_data(history(&[("alice", &[33, 35])]), votes, submitters, 38);
         let expected = final_squash(round_weight(38.0, 33.0) * 0.75 + round_weight(38.0, 35.0));
@@ -284,7 +284,7 @@ mod tests {
     #[test]
     fn mixed_history_submitter_in_earlier_round_voted_in_later_round() {
         // user had a project in 34, voted normally in 36.
-        let votes = votes_for_round(36, "alice", &[Vote::Yes, Vote::Yes]);
+        let votes = votes_for_round(36, "alice", &[Vote::Y, Vote::Y]);
         let submitters = HashMap::from([(34, HashSet::from(["alice".to_string()]))]);
         let neuron = PriorVotingHistoryNeuron::from_data(history(&[("alice", &[34, 36])]), votes, submitters, 38);
         let expected = final_squash(round_weight(38.0, 34.0) + round_weight(38.0, 36.0));
@@ -294,7 +294,7 @@ mod tests {
     #[test]
     fn mixed_history_three_rounds_submitter_only_in_the_middle() {
         // 33: voted (0.75), 34: submission (full weight), 35: no votes and not a submitter (0).
-        let votes = votes_for_round(33, "alice", &[Vote::Yes, Vote::Yes, Vote::No, Vote::Delegate]);
+        let votes = votes_for_round(33, "alice", &[Vote::Y, Vote::Y, Vote::N, Vote::Delegate]);
         let submitters = HashMap::from([(34, HashSet::from(["alice".to_string()]))]);
         let neuron = PriorVotingHistoryNeuron::from_data(history(&[("alice", &[33, 34, 35])]), votes, submitters, 38);
         let expected = final_squash(round_weight(38.0, 33.0) * 0.75 + round_weight(38.0, 34.0));
@@ -316,7 +316,7 @@ mod tests {
     #[test]
     fn submitter_bonus_exceeds_same_round_non_submitter_with_votes() {
         // alice (submitter in 35) should beat carol, who voted but only reached 0.75 active ratio.
-        let votes = votes_for_round(35, "carol", &[Vote::Yes, Vote::Yes, Vote::No, Vote::Delegate]);
+        let votes = votes_for_round(35, "carol", &[Vote::Y, Vote::Y, Vote::N, Vote::Delegate]);
         let submitters = HashMap::from([(35, HashSet::from(["alice".to_string()]))]);
         let neuron = PriorVotingHistoryNeuron::from_data(history(&[("alice", &[35]), ("carol", &[35])]), votes, submitters, 38);
         let alice = neuron.calculate_bonus("alice".to_string());
@@ -338,7 +338,7 @@ mod tests {
     #[test]
     fn active_ratio_floor_applies_in_bonus() {
         // 1 active of 5 -> true ratio 0.2, floored to ACTIVE_VOTES_MIN_RATIO (0.5).
-        let votes = votes_for_round(35, "alice", &[Vote::Yes, Vote::Delegate, Vote::Delegate, Vote::Delegate, Vote::Delegate]);
+        let votes = votes_for_round(35, "alice", &[Vote::Y, Vote::Delegate, Vote::Delegate, Vote::Delegate, Vote::Delegate]);
         let neuron = PriorVotingHistoryNeuron::from_data(history(&[("alice", &[35])]), votes, HashMap::new(), 38);
         let expected = final_squash(round_weight(38.0, 35.0) * ACTIVE_VOTES_MIN_RATIO);
         assert_close(neuron.calculate_bonus("alice".to_string()), expected);

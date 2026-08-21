@@ -61,7 +61,7 @@ fn calculate_quorum_consensus(user: &str, delegatees: &[String], submission_vote
         .iter()
         .filter(|delegatee| {
             let delegatee_vote = submission_votes.get(*delegatee).unwrap_or(&Vote::Abstain);
-            matches!(delegatee_vote, Vote::Yes | Vote::No)
+            matches!(delegatee_vote, Vote::Y | Vote::N)
         })
         .collect();
 
@@ -83,23 +83,23 @@ fn calculate_quorum_consensus(user: &str, delegatees: &[String], submission_vote
         for &delegatee in &selected_delegatees {
             let delegatee_vote = submission_votes.get(delegatee).unwrap_or(&Vote::Abstain);
             match delegatee_vote {
-                Vote::Yes => votes_yes += 1,
-                Vote::No => votes_no += 1,
+                Vote::Y => votes_yes += 1,
+                Vote::N => votes_no += 1,
                 Vote::Abstain | Vote::Delegate => {
                     bail!("Invalid delegatee operation");
                 }
             };
         }
         if votes_yes as f64 / (votes_yes + votes_no) as f64 > THRESHOLD {
-            resolved_vote = Vote::Yes
+            resolved_vote = Vote::Y
         } else {
-            resolved_vote = Vote::No
+            resolved_vote = Vote::N
         }
 
         // With this calculation method Abstain will never occur. (assuming all delegates have voted)
         // But if we were to use some different method where Abstain could occur,
         // here we would pop one delegatee of selected_delegatees list, and
-        // repeat untill we get Yes/No or run out of delegatees (min 5)
+        // repeat until we get Y/N or run out of delegatees (min 5)
 
         // let _ = selected_delegatees.pop();
     }
@@ -115,15 +115,15 @@ mod tests {
         let mut no = 0;
         for vote in submission_votes.values() {
             match vote {
-                Vote::Yes => yes += 1,
-                Vote::No => no += 1,
+                Vote::Y => yes += 1,
+                Vote::N => no += 1,
                 _ => {}
             }
         }
         if yes as f64 / (yes + no) as f64 > THRESHOLD {
-            Vote::Yes
+            Vote::Y
         } else {
-            Vote::No
+            Vote::N
         }
     }
 
@@ -139,13 +139,13 @@ mod tests {
             "del7".to_string(),
         ];
         let mut submission_votes: HashMap<String, Vote> = HashMap::new();
-        submission_votes.insert("del1".to_string(), Vote::Yes);
-        submission_votes.insert("del2".to_string(), Vote::Yes);
-        submission_votes.insert("del3".to_string(), Vote::Yes);
-        submission_votes.insert("del4".to_string(), Vote::Yes);
-        submission_votes.insert("del5".to_string(), Vote::No);
-        submission_votes.insert("del6".to_string(), Vote::No);
-        submission_votes.insert("del7".to_string(), Vote::No);
+        submission_votes.insert("del1".to_string(), Vote::Y);
+        submission_votes.insert("del2".to_string(), Vote::Y);
+        submission_votes.insert("del3".to_string(), Vote::Y);
+        submission_votes.insert("del4".to_string(), Vote::Y);
+        submission_votes.insert("del5".to_string(), Vote::N);
+        submission_votes.insert("del6".to_string(), Vote::N);
+        submission_votes.insert("del7".to_string(), Vote::N);
 
         let resolved_vote = calculate_quorum_consensus("user", &delegatees, &submission_votes).unwrap();
         let expected_vote = expected_vote(&submission_votes);
@@ -165,13 +165,13 @@ mod tests {
             "del7".to_string(),
         ];
         let mut submission_votes: HashMap<String, Vote> = HashMap::new();
-        submission_votes.insert("del1".to_string(), Vote::Yes);
-        submission_votes.insert("del2".to_string(), Vote::Yes);
-        submission_votes.insert("del3".to_string(), Vote::Yes);
-        submission_votes.insert("del4".to_string(), Vote::No);
-        submission_votes.insert("del5".to_string(), Vote::No);
-        submission_votes.insert("del6".to_string(), Vote::No);
-        submission_votes.insert("del7".to_string(), Vote::No);
+        submission_votes.insert("del1".to_string(), Vote::Y);
+        submission_votes.insert("del2".to_string(), Vote::Y);
+        submission_votes.insert("del3".to_string(), Vote::Y);
+        submission_votes.insert("del4".to_string(), Vote::N);
+        submission_votes.insert("del5".to_string(), Vote::N);
+        submission_votes.insert("del6".to_string(), Vote::N);
+        submission_votes.insert("del7".to_string(), Vote::N);
 
         let resolved_vote = calculate_quorum_consensus("user", &delegatees, &submission_votes).unwrap();
         let expected_vote = expected_vote(&submission_votes);
@@ -192,12 +192,12 @@ mod tests {
         let user7 = String::from("user7");
 
         submission_votes.insert(user0.clone(), Vote::Delegate);
-        submission_votes.insert(user1.clone(), Vote::Yes);
-        submission_votes.insert(user2.clone(), Vote::Yes);
-        submission_votes.insert(user3.clone(), Vote::Yes);
-        submission_votes.insert(user4.clone(), Vote::Yes);
-        submission_votes.insert(user5.clone(), Vote::Yes);
-        submission_votes.insert(user6.clone(), Vote::Yes);
+        submission_votes.insert(user1.clone(), Vote::Y);
+        submission_votes.insert(user2.clone(), Vote::Y);
+        submission_votes.insert(user3.clone(), Vote::Y);
+        submission_votes.insert(user4.clone(), Vote::Y);
+        submission_votes.insert(user5.clone(), Vote::Y);
+        submission_votes.insert(user6.clone(), Vote::Y);
 
         let delegates_for_user = vec![user1.clone(), user2.clone(), user3.clone(), user4.clone(), user5.clone(), user6.clone(), user7.clone()];
         let resolved_vote = calculate_quorum_consensus("user0", &delegates_for_user, &submission_votes);
@@ -241,13 +241,13 @@ mod tests {
         let user7 = String::from("user7");
 
         submission_votes.insert(user0.clone(), Vote::Delegate);
-        submission_votes.insert(user1.clone(), Vote::Yes);
-        submission_votes.insert(user2.clone(), Vote::Yes);
-        submission_votes.insert(user3.clone(), Vote::Yes);
-        submission_votes.insert(user4.clone(), Vote::Yes);
-        submission_votes.insert(user5.clone(), Vote::Yes);
-        submission_votes.insert(user6.clone(), Vote::Yes);
-        submission_votes.insert(user7.clone(), Vote::Yes);
+        submission_votes.insert(user1.clone(), Vote::Y);
+        submission_votes.insert(user2.clone(), Vote::Y);
+        submission_votes.insert(user3.clone(), Vote::Y);
+        submission_votes.insert(user4.clone(), Vote::Y);
+        submission_votes.insert(user5.clone(), Vote::Y);
+        submission_votes.insert(user6.clone(), Vote::Y);
+        submission_votes.insert(user7.clone(), Vote::Y);
 
         delegates_for_user.insert(user0.clone(), DelegateesForUser::new(vec![user1.clone(), user2.clone(), user3.clone(), user4.clone(), user5.clone(), user6.clone(), user7.clone()]));
 
@@ -272,13 +272,13 @@ mod tests {
         let user7 = String::from("user7");
 
         submission_votes.insert(user0.clone(), Vote::Delegate);
-        submission_votes.insert(user1.clone(), Vote::No);
-        submission_votes.insert(user2.clone(), Vote::No);
-        submission_votes.insert(user3.clone(), Vote::No);
-        submission_votes.insert(user4.clone(), Vote::No);
-        submission_votes.insert(user5.clone(), Vote::No);
-        submission_votes.insert(user6.clone(), Vote::No);
-        submission_votes.insert(user7.clone(), Vote::No);
+        submission_votes.insert(user1.clone(), Vote::N);
+        submission_votes.insert(user2.clone(), Vote::N);
+        submission_votes.insert(user3.clone(), Vote::N);
+        submission_votes.insert(user4.clone(), Vote::N);
+        submission_votes.insert(user5.clone(), Vote::N);
+        submission_votes.insert(user6.clone(), Vote::N);
+        submission_votes.insert(user7.clone(), Vote::N);
 
         delegates_for_user.insert(user0.clone(), DelegateesForUser::new(vec![user1.clone(), user2.clone(), user3.clone(), user4.clone(), user5.clone(), user6.clone(), user7.clone()]));
 
@@ -305,13 +305,13 @@ mod tests {
         let user9 = String::from("user9");
 
         submission_votes.insert(user0.clone(), Vote::Delegate);
-        submission_votes.insert(user1.clone(), Vote::Yes);
-        submission_votes.insert(user2.clone(), Vote::Yes);
-        submission_votes.insert(user3.clone(), Vote::Yes);
-        submission_votes.insert(user4.clone(), Vote::Yes);
-        submission_votes.insert(user5.clone(), Vote::No);
-        submission_votes.insert(user6.clone(), Vote::No);
-        submission_votes.insert(user7.clone(), Vote::No);
+        submission_votes.insert(user1.clone(), Vote::Y);
+        submission_votes.insert(user2.clone(), Vote::Y);
+        submission_votes.insert(user3.clone(), Vote::Y);
+        submission_votes.insert(user4.clone(), Vote::Y);
+        submission_votes.insert(user5.clone(), Vote::N);
+        submission_votes.insert(user6.clone(), Vote::N);
+        submission_votes.insert(user7.clone(), Vote::N);
 
         delegates_for_user.insert(
             user0.clone(),

@@ -40,14 +40,14 @@ fn voting_data_upload() {
     ]);
 
     let mut votes_submission1 = Map::new(&env);
-    votes_submission1.set(user1.clone(), Vote::Yes);
-    votes_submission1.set(user2.clone(), Vote::Yes);
-    votes_submission1.set(user3.clone(), Vote::Yes);
+    votes_submission1.set(user1.clone(), Vote::Y);
+    votes_submission1.set(user2.clone(), Vote::Y);
+    votes_submission1.set(user3.clone(), Vote::Y);
 
     // TODO use different votes here
     let mut votes_submission2 = Map::new(&env);
-    votes_submission2.set(user1.clone(), Vote::Yes);
-    votes_submission2.set(user2.clone(), Vote::No);
+    votes_submission2.set(user1.clone(), Vote::Y);
+    votes_submission2.set(user2.clone(), Vote::N);
     votes_submission2.set(user3.clone(), Vote::Abstain);
 
     contract_client.set_votes_for_submission(&submission1, &votes_submission1);
@@ -152,7 +152,7 @@ fn tally_submission_requires_admin() {
 
     let user = Address::generate(&env);
     let mut votes = Map::new(&env);
-    votes.set(user.clone(), Vote::Yes);
+    votes.set(user.clone(), Vote::Y);
     env.mock_auths(&[MockAuth {
         address: &admin,
         invoke: &MockAuthInvoke {
@@ -304,8 +304,8 @@ fn set_bump_round_flow() {
     ]);
 
     let mut votes25 = Map::new(&env);
-    votes25.set(user1.clone(), Vote::Yes);
-    votes25.set(user2.clone(), Vote::No);
+    votes25.set(user1.clone(), Vote::Y);
+    votes25.set(user2.clone(), Vote::N);
     contract_client.set_votes_for_submission(&submission, &votes25);
     let expected25 = votes25.clone();
 
@@ -360,8 +360,8 @@ fn set_bump_round_flow() {
     ]);
 
     let mut votes26 = Map::new(&env);
-    votes26.set(user1.clone(), Vote::No);
-    votes26.set(user2.clone(), Vote::Yes);
+    votes26.set(user1.clone(), Vote::N);
+    votes26.set(user2.clone(), Vote::Y);
     contract_client.set_votes_for_submission(&new_submission, &votes26);
     let expected26 = votes26.clone();
 

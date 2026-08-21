@@ -27,8 +27,8 @@ impl Submission {
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 pub enum Vote {
-    Yes,
-    No,
+    Y,
+    N,
     Delegate,
     Abstain,
 }

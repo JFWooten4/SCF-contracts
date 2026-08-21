@@ -182,10 +182,10 @@ impl VotingSystem {
                     .ok_or(VotingSystemError::NGQResultForVoterMissing)?,
             };
             match vote {
-                Vote::Yes => {
+                Vote::Y => {
                     submission_voting_power_plus = submission_voting_power_plus.add(&voting_power);
                 }
-                Vote::No => {
+                Vote::N => {
                     submission_voting_power_minus =
                         submission_voting_power_minus.add(&voting_power);
                 }

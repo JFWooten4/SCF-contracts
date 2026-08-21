@@ -12,7 +12,7 @@ preserve voter privacy, neurons are computed off-chain and uploaded to the contr
 The contract adds up results of each layer and computers the final voting power for each voter. This voting power is
 stored on-chain for future reference.
 
-This voting power is used to compute the final score for each submission: Each `Yes` and `No` vote is multiplied by
+This voting power is used to compute the final score for each submission: Each `Y` and `N` vote is multiplied by
 respective users voting powers and tallied.
 
 Contract is also a part of Soroban Governor DAO system. Voting powers of users are used as SCF Token balances (votes), which are then used to vote on proposals in the DAO.

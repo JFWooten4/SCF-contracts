@@ -28,8 +28,8 @@ impl Submission {
 #[contracttype]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Vote {
-    Yes,
-    No,
+    Y,
+    N,
     Abstain,
 }
 

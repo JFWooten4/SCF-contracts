@@ -1,23 +1,23 @@
 {
     "Submission1": {
-        "user1": "Yes",
-        "user2": "Yes",
-        "user3": "Yes",
-        "user4": "Yes",
-        "user5": "Yes"
+        "user1": "Y",
+        "user2": "Y",
+        "user3": "Y",
+        "user4": "Y",
+        "user5": "Y"
     },
     "Submission2": {
-        "user1": "No",
-        "user2": "Yes",
-        "user3": "No",
-        "user4": "No",
-        "user5": "Yes"
+        "user1": "N",
+        "user2": "Y",
+        "user3": "N",
+        "user4": "N",
+        "user5": "Y"
     },
     "Submission3": {
-        "user1": "No",
-        "user2": "No",
-        "user3": "Yes",
-        "user4": "No",
-        "user5": "No"
+        "user1": "N",
+        "user2": "N",
+        "user3": "Y",
+        "user4": "N",
+        "user5": "N"
     }
 }
